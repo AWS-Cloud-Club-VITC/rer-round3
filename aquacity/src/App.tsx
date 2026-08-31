@@ -8,11 +8,21 @@ import { SolutionsSection } from './components/SolutionsSection';
 import { ImpactSection } from './components/ImpactSection';
 import { LeakDetectionModal } from './components/LeakDetectionModal';
 import { OrganizerSpecsModal } from './components/OrganizerSpecsModal';
+import { PasswordGate } from './components/PasswordGate';
 
 import { computeImpactFromSolutions } from './utils/waterEfficiencyCalculator';
 import type { CityWaterImpact } from './types/aquacity';
 
 export function App() {
+  // Authentication State stored in sessionStorage
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      return typeof window !== 'undefined' && sessionStorage.getItem('aquacity_authenticated') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   const [activeTab, setActiveTab] = useState<AquacityTab>('journey');
 
   // Solutions State (Matches Screenshot 5: Water Recycling ON, Rainwater OFF, Leak Detection ON -> 84%)
@@ -39,6 +49,8 @@ export function App() {
 
   // Update active tab on scroll
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const handleScroll = () => {
       const sections: { id: AquacityTab; el: HTMLElement | null }[] = [
         { id: 'journey', el: document.querySelector('#journey') },
@@ -60,7 +72,7 @@ export function App() {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isAuthenticated]);
 
   // Toggle Solution Handler
   const handleToggleSolution = (id: 'recycling' | 'rainwater' | 'leakDetection') => {
@@ -84,6 +96,11 @@ export function App() {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  // If not authenticated, render Password Gate
+  if (!isAuthenticated) {
+    return <PasswordGate onAuthenticated={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-white text-[#0A192F] flex flex-col selection:bg-sky-200 selection:text-sky-950">
